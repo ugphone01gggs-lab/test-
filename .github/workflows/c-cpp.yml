@@ -1,10 +1,10 @@
 name: Build Geode Mod
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - "**" # รันทุกครั้งที่มีการ push โค้ด
-  workflow_dispatch: # เปิดให้กดรันเองมือได้ด้วย
+    branches: ["**"]
+  pull_request:
 
 jobs:
   build:
@@ -17,24 +17,31 @@ jobs:
           - name: Android64
             os: ubuntu-latest
             target: Android64
-
+          - name: Android32
+            os: ubuntu-latest
+            target: Android32
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
-
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Build the mod
-      uses: geode-sdk/build-geode-mod@main
-      with:
-        combine: true
-        target: ${{ matrix.config.target }}
+      - name: Build Geode mod
+        uses: geode-sdk/build-geode-mod@main
+        with:
+          combine: true
+          target: ${{ matrix.config.target }}
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: Geode-Mod-Output
-        path: |
-          build/**/*.geode
-          build/*.geode
-        
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: always()
+    steps:
+      - uses: geode-sdk/build-geode-mod/combine@main
+        id: build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ApexBuffer
+          path: ${{ steps.build.outputs.build-output }}
+          
